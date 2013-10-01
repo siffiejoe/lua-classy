@@ -62,7 +62,7 @@ by this OO module.
 
 ```lua
 local SomeClass = class( "SomeClass" )
-print( class.name( AClass ) )                    -->  SomeClass
+print( class.name( SomeClass ) )                 -->  SomeClass
 
 local AnotherClass = class( "AnotherClass", SomeClass )
 print( class.is_a( AnotherClass, SomeClass ) )   -->  true
