@@ -153,7 +153,9 @@ And that's basically it!
 
 ####                            class()                           ####
 
-    aClass = class( class_name [, baseClass1 [, ...]] )
+    class( class_name [, ...] ) ==> table
+        class_name: string   -- name of the class
+        ...       : table*   -- class tables for base classes
 
 Calling the result of the require call (named `class` in the above
 code snippet) creates a new class table. Zero or more base classes may
