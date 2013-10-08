@@ -19,7 +19,7 @@ Features:
 *   Multiple inheritance
 
     A class can inherit from multiple base classes. The inherited
-    methods are looked up in width first search order at class
+    methods are looked up in width-first search order at class
     creation time (or when a base class is updated).
 
 *   Simple object construction
@@ -49,7 +49,7 @@ Features:
 ##                          Getting Started                         ##
 
 This module doesn't set any global variables, so you have to store the
-return value of `require` somewhere, e.g. a local variable `class`.
+return value of `require` somewhere, e.g. in a local variable `class`.
 
 ```lua
 local class = require( "class" )
@@ -68,8 +68,8 @@ local AnotherClass = class( "AnotherClass", SomeClass )
 print( class.is_a( AnotherClass, SomeClass ) )   -->  true
 ```
 
-When defining a class, the first argument is the class name, that can
-be queried for a class/object table later using the `class.name()`
+When defining a class, the first argument is the class name, which can
+be retrieved for a class/object table later using the `class.name()`
 function. Additional arguments are base classes, which must be class
 tables returned by previous calls to this module.
 
@@ -79,9 +79,9 @@ can define methods simply by storing a function in the class table. Of
 course, the usual colon-syntax is supported. If the class has an
 `__init` method defined, this method is called during construction of
 an object with the object as first argument, and any additional
-arguments given to the call of the class table. The `__init` method is
-never inherited by sub-classes, but you can of course call it via the
-class table (e.g. in the constructor of a sub-class).
+arguments passed from the call of the class table. The `__init` method
+is never inherited by sub-classes, but you can of course call it via
+the class table (e.g. in the constructor of a sub-class).
 
 ```lua
 function SomeClass:__init( a, b )
@@ -101,11 +101,11 @@ local anObject = AnotherClass( 1, 2, 3 )
 anObject:print()                     -->  1       2       3
 ```
 
-Creating classes and defining methods (especially on classes deep down
-the inheritance hierarchy) involve some bookkeeping, so that object
-construction and method lookup on objects can be fast.
+Creating classes and defining methods (especially on classes with many
+sub-classes) involve some bookkeeping, so that object construction and
+method lookup on objects can be fast.
 
-Adding methods to base classes will also make them available on
+Adding methods to base classes will also make them available for
 objects of derived classes. Metamethods are *not* inherited, however.
 
 ```lua
@@ -126,7 +126,7 @@ local _ = anObject + anObject        -->  error!
 ```
 
 You can pretty much define any metamethod except `__index` (which
-is already used for inheritance), and maybe `__gc` (works on tables
+is already used for method lookup), and maybe `__gc` (works on tables
 starting from Lua 5.2, and only for objects created *after* the `__gc`
 metamethod has been set).
 
@@ -202,8 +202,9 @@ of certain class.
 The `cast` function changes the class of a given object (or normal
 table) to the given class (it replaces the metatable) and returns the
 object. No constructors are called in the process, so the object might
-be in an invalid state. If you want to prevent objects of a certain
-class to be casted, define a `__metatable` field in the metatable.
+be in an invalid state for the new class. If you want to prevent
+objects of a certain class to be casted, define a `__metatable` field
+in the metatable.
 
 ####                       class.delegate()                       ####
 
@@ -213,10 +214,10 @@ class to be casted, define a `__metatable` field in the metatable.
         ...  : table/string* -- vararg list or array of method names
 
 The `delegate` function creates new methods for a class that forward
-to equally named methods on an object stored inside of objects of this
-class. The stored object can be found via the given fieldname. The
-method names to delegate can be specified as varargs or in an array.
-The class table is returned.
+to methods on an object stored inside of objects of this class. The
+stored object can be found via the given fieldname. The method names
+to delegate can be specified as varargs or in an array. The class
+table is returned.
 
 
 ##                              Contact                             ##
