@@ -118,7 +118,7 @@ someObject:say_hello()               -->  hello from SomeClass
 anObject:say_hello()                 -->  hello from AnotherClass
 
 function SomeClass:__add( rhs )
-  return SomeClass( self.a + rhs.a, self.b, rhs.b )
+  return SomeClass( self.a + rhs.a, self.b + rhs.b )
 end
 
 local _ = someObject + someObject    -->  ok!
