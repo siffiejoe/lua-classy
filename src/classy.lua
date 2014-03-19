@@ -276,7 +276,7 @@ do
 
   local empty = {}   -- just an empty table used as dummy
   local FIRST_OL = 5 -- index of first overload specification
-  local MAX_COST = 2147483647
+  local MAX_DIFF = 10000
 
 
   -- create a multimethod using the parameter indices given
@@ -323,17 +323,11 @@ do
       local t = type( a )
       if t == "table" then -- class table
         local diff = (pt == a) and 0 or classinfo[ a ].sub[ pt ]
-        if not diff then
-          return nil
-        elseif c < MAX_COST then
-          c = c + diff
-        end
+        if not diff then return nil end
+        c = c + diff
       else -- type name
-        if pt ~= a then
-          return nil
-        else
-          c = MAX_COST
-        end
+        if pt ~= a then return nil end
+        c = c + MAX_DIFF
       end
     end
     return c
@@ -441,11 +435,11 @@ do
     local n = #t
     t[ n+1 ] = "      if not t[i"
     t[ n+2 ] = i
-    t[ n+3 ] = "] then\n        t[i"
+    t[ n+3 ] = "] then t[i"
     t[ n+4 ] = i
-    t[ n+5 ] = "]={}\n        t=t[i"
+    t[ n+5 ] = "]={} end\n      t=t[i"
     t[ n+6 ] = i
-    t[ n+7 ] = "]\n      end\n"
+    t[ n+7 ] = "]\n"
   end
 
 

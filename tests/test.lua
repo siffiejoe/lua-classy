@@ -14,17 +14,20 @@
 package.path = "../src/?.lua;" .. package.path
 local class = require( "classy" )
 
+local function dprint( ... ) end
+--dprint = print
+
 local A = class "A"
 function A:__init()
   self.A = true
-  --print( "A:__init()", self )
+  dprint( "A:__init()", self )
 end
 function A:method1()
-  --print( "A:method1()" )
+  dprint( "A:method1()" )
   return "A:method1()"
 end
 function A:method5()
-  --print( "A:method5()" )
+  dprint( "A:method5()" )
   return "A:method5()"
 end
 
@@ -32,32 +35,32 @@ local B = class( "B", A )
 function B:__init()
   A.__init( self )
   self.B = true
-  --print( "B:__init()", self )
+  dprint( "B:__init()", self )
 end
 function B:method2()
-  --print( "B:method2()" )
+  dprint( "B:method2()" )
   return "B:method2()"
 end
 function B:method6()
-  --print( "B:method6()" )
+  dprint( "B:method6()" )
   return "B:method6()"
 end
 
 local C = class "C"
 function C:__init()
   self.C = true
-  --print( "C:__init()", self )
+  dprint( "C:__init()", self )
 end
 function C:method3()
-  --print( "C:method3()" )
+  dprint( "C:method3()" )
   return "C:method3()"
 end
 function C:method5()
-  --print( "C:method5()" )
+  dprint( "C:method5()" )
   return "C:method5()"
 end
 function C:method6()
-  --print( "C:method6()" )
+  dprint( "C:method6()" )
   return "C:method6()"
 end
 
@@ -66,10 +69,10 @@ function D:__init()
   B.__init( self )
   C.__init( self )
   self.D = true
-  --print( "D:__init()", self )
+  dprint( "D:__init()", self )
 end
 function D:method4()
-  --print( "D:method4()" )
+  dprint( "D:method4()" )
   return "D:method4()"
 end
 
@@ -148,7 +151,7 @@ do
 end
 
 function D:method1()
-  --print( "D:method1()" )
+  dprint( "D:method1()" )
   return "D:method1()"
 end
 assert( d:method1() == "D:method1()" )
@@ -173,7 +176,7 @@ function E:__init( id )
   D.__init( self )
   self.E = true
   self.id = id
-  --print( "E:__init()", self, id )
+  dprint( "E:__init()", self, id )
 end
 assert( F.__init == nil )
 print( "testing F" )
@@ -192,7 +195,7 @@ assert( class.is_a( f, A ) == 4 )
 
 print( "testing __add metamethod for class E" )
 function E.__add( a, b )
-  --print( "E + E" )
+  dprint( "E + E" )
   return E( a.id + b.id )
 end
 local e1, e2 = E( 1 ), E( 2 )
@@ -254,41 +257,55 @@ assert( P:get_a() == 2 )
 
 print( "testing multimethods" )
 local mm = class.multimethod( 1, 3 )
---print( pcall( mm, a, b, c ) )
+dprint( pcall( mm, a, b, c ) )
 assert( not pcall( mm, a, b, c ) )
 mm:register( "string", io.type, "file", function( a, _, b )
-  --print( "func(string,_,file):", a, b )
+  dprint( "func(string,_,file):", a, b )
   return "string,file"
 end )
 assert( mm( "xy", nil, io.stdout ) == "string,file" )
---print( pcall( mm, 1, nil, io.stdout ) )
+dprint( pcall( mm, 1, nil, io.stdout ) )
 assert( not pcall( mm, 1, nil, io.stdout ) )
---print( pcall( mm, "xy", nil, nil ) )
+dprint( pcall( mm, "xy", nil, nil ) )
 assert( not pcall( mm, "xy", nil, nil ) )
 mm:register( B, E, function( a, _, b )
-  --print( "func(B,_,E):", a, b )
+  dprint( "func(B,_,E):", a, b )
   return "B,E"
 end )
 assert( mm( "xy", nil, io.stdout ) == "string,file" )
 assert( mm( b, nil, e ) == "B,E" )
 assert( mm( e, nil, e ) == "B,E" )
 mm:register( E, E, function( a, _, b )
-  --print( "func(E,_,E):", a, b )
+  dprint( "func(E,_,E):", a, b )
   return "E,E"
 end )
 assert( mm( b, nil, e ) == "B,E" )
 assert( mm( d, nil, e ) == "B,E" )
 assert( mm( e, nil, e ) == "E,E" )
 mm:register( C, E, function( a, _, b )
-  --print( "func(C,_,E):", a, b )
+  dprint( "func(C,_,E):", a, b )
   return "C,E"
 end )
 assert( mm( b, nil, e ) == "B,E" )
 assert( mm( c, nil, e ) == "C,E" )
 assert( mm( e, nil, e ) == "E,E" )
-assert( mm( e, nil, e ) == "E,E" )
---print( pcall( mm, d, nil, e ) )
+dprint( pcall( mm, d, nil, e ) )
 assert( not pcall( mm, d, nil, e ) )
+mm:register( B, "number", function( a, _, b )
+  dprint( "func(B,_,number):", a, b )
+  return "B,number"
+end )
+mm:register( A, "number", function( a, _, b )
+  dprint( "func(A,_,number):", a, b )
+  return "A,number"
+end )
+assert( mm( a, nil, 1 ) == "A,number" )
+assert( mm( b, nil, 1 ) == "B,number" )
+assert( mm( d, nil, 1 ) == "B,number" )
+assert( mm( "xy", nil, io.stdout ) == "string,file" )
+assert( mm( b, nil, e ) == "B,E" )
+assert( mm( c, nil, e ) == "C,E" )
+assert( mm( e, nil, e ) == "E,E" )
 
 print( "ok" )
 
