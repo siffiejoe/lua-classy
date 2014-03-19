@@ -1,17 +1,17 @@
-package = "class"
-version = "0.1-1"
+package = "classy"
+version = "0.2-1"
 source = {
-  url = "git://github.com/siffiejoe/lua-class.git",
-  tag = "v0.1"
+  url = "git://github.com/siffiejoe/lua-classy.git",
+  tag = "v0.2"
 }
 description = {
   summary = "A small library for class-based OO.",
   detailed = [[
     This small Lua module provides a `class' function for defining
     classes in OO programming, featuring proper multiple inheritance
-    with fast method lookups.
+    with fast method lookups, and multimethods.
   ]],
-  homepage = "https://github.com/siffiejoe/lua-class/",
+  homepage = "https://github.com/siffiejoe/lua-classy/",
   license = "MIT"
 }
 dependencies = {
@@ -20,7 +20,7 @@ dependencies = {
 build = {
   type = "builtin",
   modules = {
-    class = "src/class.lua"
+    class = "src/classy.lua"
   }
 }
 

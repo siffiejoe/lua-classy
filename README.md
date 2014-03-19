@@ -1,4 +1,4 @@
-#         Class -- Lua Module for Class-Based OO Programming         #
+#         Classy -- Lua Module for Class-Based OO Programming        #
 
 ##                           Introduction                           ##
 
@@ -52,7 +52,7 @@ This module doesn't set any global variables, so you have to store the
 return value of `require` somewhere, e.g. in a local variable `class`.
 
 ```lua
-local class = require( "class" )
+local class = require( "classy" )
 ```
 
 Result of the call to `require` is a [functable][1], a table that can
@@ -224,17 +224,15 @@ table is returned.
 
 Philipp Janda, siffiejoe(a)gmx.net
 
-Comments and feedback are always welcome (especially proposals for a
-proper project name -- "class" is *way* too ambiguous given the number
-of different Lua OO libraries out there).
+Comments and feedback are always welcome.
 
 
 ##                              License                             ##
 
-class is *copyrighted free software* distributed under the MIT license
-(the same license as Lua 5.1). The full license text follows:
+`classy` is *copyrighted free software* distributed under the MIT
+license (the same license as Lua 5.1). The full license text follows:
 
-    class (c) 2013 Philipp Janda
+    classy (c) 2014 Philipp Janda
 
     Permission is hereby granted, free of charge, to any person obtaining
     a copy of this software and associated documentation files (the
