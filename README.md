@@ -22,6 +22,12 @@ Features:
     methods are looked up in width-first search order at class
     creation time (or when a base class is updated).
 
+*   Multimethods
+
+    In case you need polymorphism for more than a single argument,
+    this module allows you to define multimethods. The dispatch works
+    for classes created via this module, and for builtin types.
+
 *   Simple object construction
 
     A `__call` metamethod is added to the class table so that an
@@ -65,7 +71,7 @@ local SomeClass = class( "SomeClass" )
 print( class.name( SomeClass ) )                 -->  SomeClass
 
 local AnotherClass = class( "AnotherClass", SomeClass )
-print( class.is_a( AnotherClass, SomeClass ) )   -->  true
+print( class.is_a( AnotherClass, SomeClass ) )   -->  1
 ```
 
 When defining a class, the first argument is the class name, which can
@@ -144,9 +150,61 @@ anObject:say_hello()                 -->  hello from AnotherClass
                                      -->  good bye
 ```
 
+If the type of `self` is not sufficient to select a suitable method,
+you can define a multimethod:
+
+```lua
+local multi = class.multimethod( 1, 2 ) -- dispatch via args 1 and 2
+
+multi:register( SomeClass, SomeClass, function( a, b )
+  print( "SomeClass, SomeClass" )
+end )
+
+multi:register( SomeClass, AnotherClass, function( a, b )
+  print( "SomeClass, AnotherClass" )
+end )
+
+multi:register( AnotherClass, AnotherClass, function( a, b )
+  print( "AnotherClass, AnotherClass" )
+end )
+
+multi( anObject, anObject )          -->  AnotherClass, AnotherClass
+multi( someObject, anObject )        -->  SomeClass, AnotherClass
+multi( someObject, someObject )      -->  SomeClass, SomeClass
+multi( anObject, someObject )        -->  error!
+```
+
+This also works for builtin types, and for type checking functions
+following the same protocol as [`io.type`][2] or [`lpeg.type`][3].
+
+```lua
+local dispatch = class.multimethod( 1, 2 )
+
+dispatch:register( "string", "number", function( a, b )
+  print( "string, number" )
+end )
+dispatch:register( "number", "string", function( a, b )
+  print( "number", "string" )
+end )
+dispatch:register( "number", io.type, "file", function( a, b )
+  print( "number, file" )
+end )
+
+dispatch( "xy", 2 )                  -->  string, number
+dispatch( 2, "xy" )                  -->  number, string
+dispatch( 3, io.stdout )             -->  number, file
+dispatch( 1, 2 )                     -->  error!
+```
+
+For builtin types the argument type must match exactly (there are no
+superclasses to take into account). Of course, you can also mix
+classes and builtin types.
+
 And that's basically it!
 
   [1]: http://lua-users.org/wiki/FuncTables
+  [2]: http://www.lua.org/manual/5.2/manual.html#pdf-io.type
+  [3]: http://www.inf.puc-rio.br/~roberto/lpeg/#f-type
 
 
 ##                             Reference                            ##
@@ -187,7 +245,7 @@ function returns `nil`.
 
 ####                         class.is_a()                         ####
 
-    class.is_a( obj_or_cls, base ) ==> boolean
+    class.is_a( obj_or_cls, base ) ==> integer/nil
         obj_or_cls: table    -- an object table or a class table
         base      : table    -- a class table
 
