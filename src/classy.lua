@@ -198,12 +198,14 @@ setmetatable( M, { __call = create_class } )
 
 -- returns the class of an object
 function M.of( o )
+  if o == nil then return nil end
   return instance2class[ o ]
 end
 
 
 -- returns the class name of an object or class
 function M.name( oc )
+  if oc == nil then return nil end
   oc = instance2class[ oc ] or oc
   local info = classinfo[ oc ]
   return info and info.name
@@ -213,6 +215,7 @@ end
 -- checks if an object or class is in an inheritance
 -- relationship with a given class
 function M.is_a( oc, cls )
+  if oc == nil then return nil end
   local info = assert( classinfo[ cls ], "invalid class" )
   oc = instance2class[ oc ] or oc
   if oc == cls then
