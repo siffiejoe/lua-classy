@@ -171,11 +171,11 @@ end )
 multi( anObject, anObject )          -->  AnotherClass, AnotherClass
 multi( someObject, anObject )        -->  SomeClass, AnotherClass
 multi( someObject, someObject )      -->  SomeClass, SomeClass
-multi( anObject, someObject )        -->  error!
+multi( anObject, someObject )        -->  SomeClass, SomeClass
 ```
 
 This also works for builtin types, and for type checking functions
-following the same protocol as [`io.type`][2] or [`lpeg.type`][3].
+following the same protocol as [`io.type`][2] or [`lpeg.type`][3]:
 
 ```lua
 local dispatch = class.multimethod( 1, 2 )
@@ -184,7 +184,7 @@ dispatch:register( "string", "number", function( a, b )
   print( "string, number" )
 end )
 dispatch:register( "number", "string", function( a, b )
-  print( "number", "string" )
+  print( "number, string" )
 end )
 dispatch:register( "number", io.type, "file", function( a, b )
   print( "number, file" )
@@ -276,6 +276,26 @@ to methods on an object stored inside of objects of this class. The
 stored object can be found via the given fieldname. The method names
 to delegate can be specified as varargs or in an array. The class
 table is returned.
+
+####                      class.multimethod()                     ####
+
+    class.multimethod( ... ) ==> table   -- returns the multimethod
+        ...  : integer,integer*   -- indices of polymorphic parameters
+
+The `multimethod` function creates a [callable table][1], that tries
+to dispatch calls to suitable registered functions depending on the
+arguments passed. Only arguments specified during the creation of the
+multimethod are used to search for a matching implementation. The
+[functable][1] also provides a method for registering functions for
+certain argument types:
+
+    mm:register( ... ) ==> table         -- returns self
+        ...  : (string/table/(function,string))*, function
+
+The arguments to `register` are either strings (names of builtin
+types), class tables (for classes), or pairs of a function and a
+string for external type checking functions like [`io.type`][2] (the
+function is the type checker, the string is the type name to match).
 
 
 ##                              Contact                             ##
