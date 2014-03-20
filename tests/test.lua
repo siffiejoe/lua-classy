@@ -15,7 +15,7 @@ package.path = "../src/?.lua;" .. package.path
 local class = require( "classy" )
 
 local function dprint( ... ) end
---dprint = print
+--dprint = print -- uncomment for debug output
 
 local A = class "A"
 function A:__init()
@@ -75,6 +75,14 @@ function D:method4()
   dprint( "D:method4()" )
   return "D:method4()"
 end
+
+print( "testing non-class parameters" )
+assert( class.name( nil ) == nil )
+assert( class.of( nil ) == nil )
+assert( class.is_a( nil, A ) == nil )
+assert( class.name( {} ) == nil )
+assert( class.of( {} ) == nil )
+assert( class.is_a( {}, A ) == nil )
 
 print( "testing A" )
 local a = A()

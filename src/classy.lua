@@ -278,7 +278,7 @@ do
   end
 
   local empty = {}   -- just an empty table used as dummy
-  local FIRST_OL = 5 -- index of first overload specification
+  local FIRST_OL = 4 -- index of first overload specification
 
 
   -- create a multimethod using the parameter indices given
@@ -292,28 +292,29 @@ do
       max = assert( x > max and x % 1 == 0 and x,
                     "invalid parameter overload specification" )
     end
-    local meta = {
+    local mm = {
+      t, max, false,
       __index = MM,
       __call = no_candidate2,
     }
-    return setmetatable( { t, max, meta, false }, meta )
+    return setmetatable( mm, mm )
   end
 
 
   -- clear all cached multimethod lookups
   function MM:clearcache()
-    self[ 4 ] = {}
+    self[ 3 ] = {}
     return self
   end
 
 
   -- remove all registered overloads for this multimethod
   function MM:reset()
-    self[ 3 ].__call = no_candidate2
+    self.__call = no_candidate2
     for i = #self, FIRST_OL, -1 do
       self[ i ] = nil
     end
-    self[ 4 ] = {}
+    self[ 3 ] = {}
     return self
   end
 
@@ -396,7 +397,7 @@ do
     local c = #mm[ 1 ]
     local n = #t
     t[ n+1 ] = s_rep( "(", c-1 )
-    t[ n+2 ] = "mm[4]"
+    t[ n+2 ] = "mm[3]"
     for i = 1, c-1 do
       local j = i*3+n
       t[ j ] = "[i"
@@ -475,7 +476,7 @@ do
     elseif is_ambiguous then
       error("ambiguous multimethod call",2)
     else
-      local t = mm[4]
+      local t = mm[3]
 ]=]
     for i = 1, n-1 do
       c_updatecache( code, i )
@@ -491,8 +492,8 @@ do
       instance2class, empty, type, error, calculate_cost, no_candidate3,
       t_unpack( tcs )
     )
-    mm[ 3 ].__call = f
-    mm[ 4 ] = {}
+    mm.__call = f
+    mm[ 3 ] = {}
     return f( mm, ... )
   end
 
@@ -525,7 +526,7 @@ do
     assert( #self[ 1 ] == #ol, "wrong number of overloaded parameters" )
     ol.func = func
     self[ #self+1 ] = ol
-    self[ 3 ].__call = recompile_and_call
+    self.__call = recompile_and_call
     return self
   end
 
