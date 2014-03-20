@@ -19,7 +19,7 @@ dependencies = {
 build = {
   type = "builtin",
   modules = {
-    class = "src/classy.lua"
+    classy = "src/classy.lua"
   }
 }
 
