@@ -276,7 +276,6 @@ do
 
   local empty = {}   -- just an empty table used as dummy
   local FIRST_OL = 5 -- index of first overload specification
-  local MAX_DIFF = 10000
 
 
   -- create a multimethod using the parameter indices given
@@ -327,7 +326,6 @@ do
         c = c + diff
       else -- type name
         if pt ~= a then return nil end
-        c = c + MAX_DIFF
       end
     end
     return c
