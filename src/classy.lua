@@ -502,9 +502,8 @@ do
     local i, n = 1, select( '#', ... )
     local ol = {}
     assert( n >= 1, "missing function in overload specification" )
-    local func = select( n, ... )
-    assert( type( func ) == "function",
-            "missing function in overload specification" )
+    local func = assert( select( n, ... ),
+                         "missing function in overload specification" )
     while i < n do
       local a = select( i, ... )
       local t = type( a )
