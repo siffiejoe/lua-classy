@@ -296,6 +296,10 @@ The arguments to `register` are either strings (names of builtin
 types), class tables (for classes), or pairs of a function and a
 string for external type checking functions like [`io.type`][2] (the
 function is the type checker, the string is the type name to match).
+The number of types for this call must match the number of arguments
+to the original `class.multimethod` call. The last argument of
+`register` is the function (or anything callable) to register for
+this specific overload.
 
 
 ##                              Contact                             ##
