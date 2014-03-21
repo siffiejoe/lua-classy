@@ -7,7 +7,6 @@ local setmetatable = assert( setmetatable )
 local select = assert( select )
 local pairs = assert( pairs )
 local ipairs = assert( ipairs )
-local next = assert( next )
 local type = assert( type )
 local error = assert( error )
 local loadstring = assert( V == "Lua 5.1" and loadstring or load )
@@ -318,7 +317,7 @@ do
     local funcs = {}, {}
     for i = FIRST_OL, #mm do
       local ol = mm[ i ]
-      for k,v in next, ol do
+      for k,v in pairs( ol ) do
         if type( k ) == "function" and
            (a == nil or v[ a ]) and
            not funcs[ k ] then
