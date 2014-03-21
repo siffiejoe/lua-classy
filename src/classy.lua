@@ -2,7 +2,7 @@
 
 -- cache globals
 local assert = assert
-local _V = assert( _VERSION )
+local V = assert( _VERSION )
 local setmetatable = assert( setmetatable )
 local select = assert( select )
 local pairs = assert( pairs )
@@ -10,14 +10,14 @@ local ipairs = assert( ipairs )
 local next = assert( next )
 local type = assert( type )
 local error = assert( error )
-local loadstring = assert( _V == "Lua 5.1" and loadstring or load )
+local loadstring = assert( V == "Lua 5.1" and loadstring or load )
 local table = table
 assert( type( table ) == "table" )
 local string = string
 assert( type( string ) == "table" )
 local s_rep = assert( string.rep )
 local t_concat = assert( table.concat )
-local t_unpack = assert( _V == "Lua 5.1" and unpack or table.unpack )
+local t_unpack = assert( V == "Lua 5.1" and unpack or table.unpack )
 
 
 
@@ -267,7 +267,7 @@ do
   local MM = {}
 
   local errlvl = 3
-  if _V == "Lua 5.1" then
+  if V == "Lua 5.1" then
     errlvl = 4
   end
   local function no_candidate2()
