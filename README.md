@@ -28,13 +28,6 @@ Features:
     this module allows you to define multimethods. The dispatch works
     for classes created via this module, and for builtin types.
 
-*   Simple object construction
-
-    A `__call` metamethod is added to the class table so that an
-    object can be created with something looking like a simple
-    function call. You can define a constructor method which is called
-    during object construction.
-
 *   Easy definition of (meta-)methods
 
     Storing a new field in the class table will make it available in
@@ -156,15 +149,15 @@ you can define a multimethod:
 ```lua
 local multi = class.multimethod( 1, 2 ) -- dispatch via args 1 and 2
 
-multi:register( SomeClass, SomeClass, function( a, b )
+class.overload( multi, SomeClass, SomeClass, function( a, b )
   print( "SomeClass, SomeClass" )
 end )
 
-multi:register( SomeClass, AnotherClass, function( a, b )
+class.overload( multi, SomeClass, AnotherClass, function( a, b )
   print( "SomeClass, AnotherClass" )
 end )
 
-multi:register( AnotherClass, AnotherClass, function( a, b )
+class.overload( multi, AnotherClass, AnotherClass, function( a, b )
   print( "AnotherClass, AnotherClass" )
 end )
 
@@ -180,13 +173,13 @@ following the same protocol as [`io.type`][2] or [`lpeg.type`][3]:
 ```lua
 local dispatch = class.multimethod( 1, 2 )
 
-dispatch:register( "string", "number", function( a, b )
+class.overload( dispatch, "string", "number", function( a, b )
   print( "string, number" )
 end )
-dispatch:register( "number", "string", function( a, b )
+class.overload( dispatch, "number", "string", function( a, b )
   print( "number, string" )
 end )
-dispatch:register( "number", io.type, "file", function( a, b )
+class.overload( dispatch, "number", io.type, "file", function( a, b )
   print( "number, file" )
 end )
 
@@ -282,24 +275,27 @@ table is returned.
     class.multimethod( ... ) ==> table   -- returns the multimethod
         ...  : integer,integer*   -- indices of polymorphic parameters
 
-The `multimethod` function creates a [callable table][1], that tries
-to dispatch calls to suitable registered functions depending on the
-arguments passed. Only arguments specified during the creation of the
-multimethod are used to search for a matching implementation. The
-[functable][1] also provides a method for registering functions for
-certain argument types:
+The `multimethod` function creates a function, that tries to dispatch
+calls to suitable registered functions depending on the arguments
+passed. Only arguments specified during the creation of the
+multimethod are used to search for a matching implementation.
 
-    mm:register( ... ) ==> table         -- returns self
+####                       class.overload()                       ####
+
+    class.overload( mm, ... ) ==> table         -- returns self
+        mm   : function           -- the multimethod
         ...  : (string/table/(function,string))*, function
 
-The arguments to `register` are either strings (names of builtin
-types), class tables (for classes), or pairs of a function and a
-string for external type checking functions like [`io.type`][2] (the
-function is the type checker, the string is the type name to match).
-The number of types for this call must match the number of arguments
-to the original `class.multimethod` call. The last argument of
-`register` is the function (or anything callable) to register for
-this specific overload.
+Calling this function adds an overload to a given multimethod, i.e. a
+new set of parameter types for which a new implementation method is
+called.  The additional arguments to `overload` are either strings
+(names of builtin types), class tables (for classes), or pairs of a
+function and a string for external type checking functions like
+[`io.type`][2] (the function is the type checker, the string is the
+type name to match). The number of types for this call must match the
+number of arguments to the original `class.multimethod` call. The last
+argument of `overload` is the function (or anything callable) to
+register for this specific overload.
 
 
 ##                              Contact                             ##
@@ -314,7 +310,7 @@ Comments and feedback are always welcome.
 `classy` is *copyrighted free software* distributed under the MIT
 license (the same license as Lua 5.1). The full license text follows:
 
-    classy (c) 2014 Philipp Janda
+    classy (c) 2013-2014 Philipp Janda
 
     Permission is hereby granted, free of charge, to any person obtaining
     a copy of this software and associated documentation files (the

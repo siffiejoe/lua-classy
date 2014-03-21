@@ -264,21 +264,17 @@ end
 
 -- multimethod stuff
 do
-  local MM = {}
+  -- store multimethods and map them to the meta-data
+  local mminfo = setmetatable( {}, mode_k_meta )
 
-  local errlvl = 3
-  if V == "Lua 5.1" then
-    errlvl = 4
-  end
-  local function no_candidate2()
-    error( "no matching multimethod overload", 2 )
-  end
-  local function no_candidate3()
-    error( "no matching multimethod overload", errlvl )
+  local erroffset = 0
+  if V == "Lua 5.1" then erroffset = 1 end
+  local function no_candidate()
+    error( "no matching multimethod overload", 2+erroffset )
   end
 
   local empty = {}   -- just an empty table used as dummy
-  local FIRST_OL = 4 -- index of first overload specification
+  local FIRST_OL = 5 -- index of first overload specification
 
 
   -- create a multimethod using the parameter indices given
@@ -292,30 +288,12 @@ do
       max = assert( x > max and x % 1 == 0 and x,
                     "invalid parameter overload specification" )
     end
-    local mm = {
-      t, max, false,
-      __index = MM,
-      __call = no_candidate2,
-    }
-    return setmetatable( mm, mm )
-  end
-
-
-  -- clear all cached multimethod lookups
-  function MM:clearcache()
-    self[ 3 ] = {}
-    return self
-  end
-
-
-  -- remove all registered overloads for this multimethod
-  function MM:reset()
-    self.__call = no_candidate2
-    for i = #self, FIRST_OL, -1 do
-      self[ i ] = nil
+    local mm_impl = { no_candidate, false, t, max }
+    local function mm( ... )
+      return mm_impl[ 1 ]( mm_impl, ... )
     end
-    self[ 3 ] = {}
-    return self
+    mminfo[ mm ] = mm_impl
+    return mm
   end
 
 
@@ -369,7 +347,7 @@ do
   end
 
   local function c_typecheck( t, mm, funcs, j )
-    local n, ai = #t, mm[ 1 ][ j ]
+    local n, ai = #t, mm[ 3 ][ j ]
     t[ n+1 ] = "  local i"
     t[ n+2 ] = j
     t[ n+3 ] = "=(_"
@@ -394,10 +372,10 @@ do
   end
 
   local function c_cache( t, mm )
-    local c = #mm[ 1 ]
+    local c = #mm[ 3 ]
     local n = #t
     t[ n+1 ] = s_rep( "(", c-1 )
-    t[ n+2 ] = "mm[3]"
+    t[ n+2 ] = "mm[2]"
     for i = 1, c-1 do
       local j = i*3+n
       t[ j ] = "[i"
@@ -446,17 +424,15 @@ do
 
 
   local function recompile_and_call( mm, ... )
-    local n = #mm[ 1 ]
+    local n = #mm[ 3 ] -- number of polymorphic parameters
     local tcs = collect_type_checkers( mm )
-    local code = {
-      "local i2c,empty,type,error,calculate_cost,no_candidate"
-    }
+    local code = { "local i2c,empty,type,error,calculate_cost,erroff" }
     if #tcs >= 1 then
       code[ #code+1 ] = ","
     end
     c_varlist( code, #tcs, "tc" )
     code[ #code+1 ] = "=...\nreturn function(mm,"
-    c_varlist( code, mm[ 2 ], "_" )
+    c_varlist( code, mm[ 4 ], "_" )
     code[ #code+1 ] = ",...)\n"
     for i = 1, n do
       c_typecheck( code, mm, tcs, i )
@@ -472,11 +448,11 @@ do
     end
     code[ #code+1 ] = [=[
     if f==nil then
-      no_candidate()
+      error("no matching multimethod overload",2+erroff)
     elseif is_ambiguous then
-      error("ambiguous multimethod call",2)
+      error("ambiguous multimethod call",2+erroff)
     else
-      local t = mm[3]
+      local t = mm[2]
 ]=]
     for i = 1, n-1 do
       c_updatecache( code, i )
@@ -484,22 +460,24 @@ do
     code[ #code+1 ] = "      t[i"
     code[ #code+1 ] = n
     code[ #code+1 ] = "]=f\n    end\n  end\n  return f("
-    c_varlist( code, mm[ 2 ], "_" )
+    c_varlist( code, mm[ 4 ], "_" )
     code[ #code+1 ] = ",...)\nend\n"
     code = t_concat( code )
     --print( code ) -- XXX
     local f = assert( loadstring( code, "[multimethod]" ) )(
-      instance2class, empty, type, error, calculate_cost, no_candidate3,
+      instance2class, empty, type, error, calculate_cost, erroffset,
       t_unpack( tcs )
     )
-    mm.__call = f
-    mm[ 3 ] = {}
+    mm[ 1 ] = f
+    mm[ 2 ] = {}
     return f( mm, ... )
   end
 
 
   -- register a new overload for this multimethod
-  function MM:register( ... )
+  function M.overload( f, ... )
+    local mm = assert( type( f ) == "function" and mminfo[ f ],
+                       "argument is not a multimethod" )
     local i, n = 1, select( '#', ... )
     local ol = {}
     assert( n >= 1, "missing function in overload specification" )
@@ -523,11 +501,10 @@ do
       end
       i = i + 1
     end
-    assert( #self[ 1 ] == #ol, "wrong number of overloaded parameters" )
+    assert( #mm[ 3 ] == #ol, "wrong number of overloaded parameters" )
     ol.func = func
-    self[ #self+1 ] = ol
-    self.__call = recompile_and_call
-    return self
+    mm[ #mm+1 ] = ol
+    mm[ 1 ] = recompile_and_call
   end
 
 end

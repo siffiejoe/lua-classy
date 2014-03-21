@@ -13,15 +13,15 @@ local sq = Square()
 local circ = Circle()
 
 local intersect = class.multimethod( 1, 2 )
-intersect:register( Rectangle, Rectangle, function( x, y )
+class.overload( intersect, Rectangle, Rectangle, function( x, y )
   print( "Rectangle - Rectangle intersection" )
 end )
 
-intersect:register( Circle, Circle, function( x, y )
+class.overload( intersect, Circle, Circle, function( x, y )
   print( "Circle - Circle intersection" )
 end )
 
-intersect:register( Rectangle, Circle, function( x, y )
+class.overload( intersect, Rectangle, Circle, function( x, y )
   print( "Rectangle - Circle intersection" )
 end )
 
