@@ -19,7 +19,6 @@ local t_concat = assert( table.concat )
 local t_unpack = assert( V == "Lua 5.1" and unpack or table.unpack )
 
 
-
 -- list of all metamethods that a user of this library is allowed to
 -- add to a class
 local allowed_metamethods = {
@@ -170,7 +169,7 @@ local function create_class( _, name, ... )
     },
     c_meta = {
       __index = index,
-      __newindex =  class_newindex,
+      __newindex = class_newindex,
       __call = default_constructor,
       __pairs = class_pairs,
       __ipairs = class_ipairs,
@@ -180,9 +179,7 @@ local function create_class( _, name, ... )
   linearize_ancestors( cls, info.super, ... )
   for i = #info.super, 1, -1 do
     for k,v in pairs( classinfo[ info.super[ i ] ].members ) do
-      if k ~= "__init" then
-        index[ k ] = v
-      end
+      if k ~= "__init" then index[ k ] = v end
     end
   end
   classinfo[ cls ] = info
@@ -217,9 +214,7 @@ function M.is_a( oc, cls )
   if oc == nil then return nil end
   local info = assert( classinfo[ cls ], "invalid class" )
   oc = instance2class[ oc ] or oc
-  if oc == cls then
-    return 0
-  end
+  if oc == cls then return 0 end
   return info.sub[ oc ]
 end
 
@@ -297,11 +292,10 @@ do
 
 
   local function calculate_cost( ol, ... )
-    local c, n = 0, select( '#', ... )
-    for i = 1, n do
+    local c = 0
+    for i = 1, select( '#', ... ) do
       local a, pt = ol[ i ], select( i, ... )
-      local t = type( a )
-      if t == "table" then -- class table
+      if type( a ) == "table" then -- class table
         local diff = (pt == a) and 0 or classinfo[ a ].sub[ pt ]
         if not diff then return nil end
         c = c + diff
