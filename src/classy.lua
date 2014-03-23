@@ -55,21 +55,24 @@ local instance2class = setmetatable( {}, mode_k_meta )
 
 -- object constructor for the class if no custom __init function is
 -- defined
-local function default_constructor( cls )
-  local o = {}
-  instance2class[ o ] = cls
-  return setmetatable( o, classinfo[ cls ].o_meta )
+local function default_constructor( meta )
+  return function( cls )
+    local o = {}
+    instance2class[ o ] = cls
+    return setmetatable( o, meta )
+  end
 end
 
 -- object constructor for the class if a custom __init function is
 -- available
-local function init_constructor( cls, ... )
-  local info = classinfo[ cls ]
-  local o = {}
-  instance2class[ o ] = cls
-  setmetatable( o, info.o_meta )
-  info.members.__init( o, ... )
-  return o
+local function init_constructor( meta, init )
+  return function( cls, ... )
+    local o = {}
+    instance2class[ o ] = cls
+    setmetatable( o, meta )
+    init( o, ... )
+    return o
+  end
 end
 
 
@@ -103,9 +106,9 @@ local function class_newindex( cls, key, val )
     info.members.__init = val
     info.o_meta.__index.__init = val
     if type( val ) == "function" then
-      info.c_meta.__call = init_constructor
+      info.c_meta.__call = init_constructor( info.o_meta, val )
     else
-      info.c_meta.__call = default_constructor
+      info.c_meta.__call = default_constructor( info.o_meta )
     end
   else
     info.members[ key ] = val
@@ -159,18 +162,17 @@ end
 local function create_class( _, name, ... )
   assert( type( name ) == "string", "class name must be a string" )
   local cls, index = {}, {}
+  local o_meta = { __index = index }
   local info = {
     name = name,
     super = { n = 0 },
     sub = setmetatable( {}, mode_k_meta ),
     members = {},
-    o_meta = {
-      __index = index,
-    },
+    o_meta = o_meta,
     c_meta = {
       __index = index,
       __newindex = class_newindex,
-      __call = default_constructor,
+      __call = default_constructor( o_meta ),
       __pairs = class_pairs,
       __ipairs = class_ipairs,
       __metatable = false,
