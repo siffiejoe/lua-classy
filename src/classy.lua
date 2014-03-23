@@ -26,7 +26,7 @@ local allowed_metamethods = {
   __mod = true, __pow = true, __unm = true, __concat = true,
   __len = true, __eq = true, __lt = true, __le = true, __call = true,
   __tostring = true, __pairs = true, __ipairs = true, __gc = true,
-  __newindex = true,
+  __newindex = true, __metatable = true,
 }
 
 -- this metatable is (re-)used often:
@@ -98,7 +98,7 @@ end
 -- metamethods, initializers, and normal members. updates sub classes!
 local function class_newindex( cls, key, val )
   local info = classinfo[ cls ]
-  if allowed_metamethods[ key ] and type( val ) == "function" then
+  if allowed_metamethods[ key ] then
     assert( info.o_meta[ key ] == nil,
             "overwriting metamethods not allowed" )
     info.o_meta[ key ] = val
@@ -162,7 +162,10 @@ end
 local function create_class( _, name, ... )
   assert( type( name ) == "string", "class name must be a string" )
   local cls, index = {}, {}
-  local o_meta = { __index = index }
+  local o_meta = {
+    __index = index,
+    __name = name,
+  }
   local info = {
     name = name,
     super = { n = 0 },
@@ -175,6 +178,7 @@ local function create_class( _, name, ... )
       __call = default_constructor( o_meta ),
       __pairs = class_pairs,
       __ipairs = class_ipairs,
+      __name = "class",
       __metatable = false,
     },
   }
