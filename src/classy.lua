@@ -26,7 +26,9 @@ local allowed_metamethods = {
   __mod = true, __pow = true, __unm = true, __concat = true,
   __len = true, __eq = true, __lt = true, __le = true, __call = true,
   __tostring = true, __pairs = true, __ipairs = true, __gc = true,
-  __newindex = true, __metatable = true,
+  __newindex = true, __metatable = true, __idiv = true, __band = true,
+  __bor = true, __bxor = true, __bnot = true, __shl = true,
+  __shr = true,
 }
 
 -- this metatable is (re-)used often:
