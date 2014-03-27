@@ -6,9 +6,9 @@ source = {
 description = {
   summary = "A small library for class-based OO.",
   detailed = [[
-    This small Lua module provides a `class' function for defining
-    classes in OO programming, featuring proper multiple inheritance
-    with fast method lookups, and multimethods.
+    This Lua module provides a functable for defining classes in OO
+    programming, featuring multiple inheritance with fast method
+    lookups, and multimethods.
   ]],
   homepage = "https://github.com/siffiejoe/lua-classy/",
   license = "MIT"
