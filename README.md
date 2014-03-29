@@ -272,7 +272,7 @@ table is returned.
 
 ####                      class.multimethod()                     ####
 
-    class.multimethod( ... ) ==> table   -- returns the multimethod
+    class.multimethod( ... ) ==> function   -- returns the multimethod
         ...  : integer,integer*   -- indices of polymorphic parameters
 
 The `multimethod` function creates a function, that tries to dispatch
@@ -282,7 +282,7 @@ multimethod are used to search for a matching implementation.
 
 ####                       class.overload()                       ####
 
-    class.overload( mm, ... ) ==> table         -- returns self
+    class.overload( mm, ... )
         mm   : function           -- the multimethod
         ...  : (string/table/(function,string))*, function
 
