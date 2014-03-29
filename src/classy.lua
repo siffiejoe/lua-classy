@@ -308,6 +308,11 @@ do
   end
 
 
+  local function make_weak()
+    return setmetatable( {}, mode_k_meta )
+  end
+
+
   local function calculate_cost( ol, ... )
     local c = 0
     for i = 1, select( '#', ... ) do
@@ -430,7 +435,7 @@ do
     t[ n+2 ] = i
     t[ n+3 ] = "] then t[i"
     t[ n+4 ] = i
-    t[ n+5 ] = "]={} end\n    t=t[i"
+    t[ n+5 ] = "]=mk_weak() end\n    t=t[i"
     t[ n+6 ] = i
     t[ n+7 ] = "]\n"
   end
@@ -440,7 +445,7 @@ do
     local n = #mm[ 2 ] -- number of polymorphic parameters
     local tcs = collect_type_checkers( mm )
     local code = {
-      "local type,i2c,cache,empty,sel_impl,no_match,amb_call"
+      "local type,i2c,cache,empty,mk_weak,sel_impl,no_match,amb_call"
     }
     if #tcs >= 1 then
       code[ #code+1 ] = ","
@@ -480,8 +485,8 @@ do
     code = t_concat( code )
     --print( code ) -- XXX
     local f = assert( loadstring( code, "[multimethod]" ) )(
-      type, instance2class, {}, empty, select_impl, no_match3,
-      amb_call, t_unpack( tcs )
+      type, instance2class, make_weak(), empty, make_weak,
+      select_impl, no_match3, amb_call, t_unpack( tcs )
     )
     mm[ 1 ] = f
     return f( mm, ... )
