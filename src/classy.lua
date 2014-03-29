@@ -271,12 +271,21 @@ do
 
   local erroffset = 0
   if V == "Lua 5.1" then erroffset = 1 end
-  local function no_candidate()
+
+  local function no_match2()
     error( "no matching multimethod overload", 2+erroffset )
   end
 
+  local function no_match3()
+    error( "no matching multimethod overload", 3+erroffset )
+  end
+
+  local function amb_call()
+    error( "ambiguous multimethod call", 3+erroffset )
+  end
+
   local empty = {}   -- just an empty table used as dummy
-  local FIRST_OL = 5 -- index of first overload specification
+  local FIRST_OL = 4 -- index of first overload specification
 
 
   -- create a multimethod using the parameter indices given
@@ -290,7 +299,7 @@ do
       max = assert( x > max and x % 1 == 0 and x,
                     "invalid parameter overload specification" )
     end
-    local mm_impl = { no_candidate, false, t, max }
+    local mm_impl = { no_match2, t, max }
     local function mm( ... )
       return mm_impl[ 1 ]( mm_impl, ... )
     end
@@ -312,6 +321,23 @@ do
       end
     end
     return c
+  end
+
+
+  local function select_impl( cost, f, amb, ol, ... )
+    local c = calculate_cost( ol, ... )
+    if c then
+      if cost then
+        if c < cost then
+          cost, f, amb = c, ol.func, false
+        elseif c == cost then
+          amb = true
+        end
+      else
+        cost, f, amb = c, ol.func, false
+      end
+    end
+    return cost, f, amb
   end
 
 
@@ -348,7 +374,7 @@ do
   end
 
   local function c_typecheck( t, mm, funcs, j )
-    local n, ai = #t, mm[ 3 ][ j ]
+    local n, ai = #t, mm[ 2 ][ j ]
     t[ n+1 ] = "  local i"
     t[ n+2 ] = j
     t[ n+3 ] = "=(_"
@@ -373,10 +399,10 @@ do
   end
 
   local function c_cache( t, mm )
-    local c = #mm[ 3 ]
+    local c = #mm[ 2 ]
     local n = #t
     t[ n+1 ] = s_rep( "(", c-1 )
-    t[ n+2 ] = "mm[2]"
+    t[ n+2 ] = "cache"
     for i = 1, c-1 do
       local j = i*3+n
       t[ j ] = "[i"
@@ -386,91 +412,78 @@ do
     local j = c*3+n
     t[ j ] = "[i"
     t[ j+1 ] = c
-    t[ j+2 ] = "]"
+    t[ j+2 ] = "]\n"
   end
 
   local function c_costcheck( t, i, j )
     local n = #t
-    t[ n+1 ] = "    ol,pt=mm["
+    t[ n+1 ] = "    cost,f,is_amb=sel_impl(cost,f,is_amb,mm["
     t[ n+2 ] = j+FIRST_OL-1
-    t[ n+3 ] = "],i"
-    t[ n+4 ] = j
-    t[ n+5 ] = "\n    c=calculate_cost(ol,"
+    t[ n+3 ] = "],"
     c_varlist( t, i, "i" )
-    t[ #t+1 ] = [=[)
-    if c then
-      if cost then
-        if c < cost then
-          cost,is_ambiguous,f=c,false,ol.func
-        elseif c==cost then
-          is_ambiguous=true
-        end
-      else
-        cost,f=c,ol.func
-      end
-    end
-]=]
+    t[ #t+1 ] = ")\n"
   end
 
   local function c_updatecache( t, i )
     local n = #t
-    t[ n+1 ] = "      if not t[i"
+    t[ n+1 ] = "    if not t[i"
     t[ n+2 ] = i
     t[ n+3 ] = "] then t[i"
     t[ n+4 ] = i
-    t[ n+5 ] = "]={} end\n      t=t[i"
+    t[ n+5 ] = "]={} end\n    t=t[i"
     t[ n+6 ] = i
     t[ n+7 ] = "]\n"
   end
 
 
   local function recompile_and_call( mm, ... )
-    local n = #mm[ 3 ] -- number of polymorphic parameters
+    local n = #mm[ 2 ] -- number of polymorphic parameters
     local tcs = collect_type_checkers( mm )
-    local code = { "local i2c,empty,type,error,calculate_cost,erroff" }
+    local code = {
+      "local type,i2c,cache,empty,sel_impl,no_match,amb_call"
+    }
     if #tcs >= 1 then
       code[ #code+1 ] = ","
     end
     c_varlist( code, #tcs, "tc" )
     code[ #code+1 ] = "=...\nreturn function(mm,"
-    c_varlist( code, mm[ 4 ], "_" )
+    c_varlist( code, mm[ 3 ], "_" )
     code[ #code+1 ] = ",...)\n"
     for i = 1, n do
       c_typecheck( code, mm, tcs, i )
     end
     code[ #code+1 ] = "  local f="
     c_cache( code, mm )
-    code[ #code+1 ] = [=[ --
+    code[ #code+1 ] = [=[
   if f==nil then
-    local is_ambiguous,cost,ol,pt,c
+    local is_amb,cost
 ]=]
     for i = 1, #mm-FIRST_OL+1 do
       c_costcheck( code, n, i )
     end
     code[ #code+1 ] = [=[
     if f==nil then
-      error("no matching multimethod overload",2+erroff)
-    elseif is_ambiguous then
-      error("ambiguous multimethod call",2+erroff)
-    else
-      local t = mm[2]
+      no_match()
+    elseif is_amb then
+      amb_call()
+    end
+    local t=cache
 ]=]
     for i = 1, n-1 do
       c_updatecache( code, i )
     end
-    code[ #code+1 ] = "      t[i"
+    code[ #code+1 ] = "    t[i"
     code[ #code+1 ] = n
-    code[ #code+1 ] = "]=f\n    end\n  end\n  return f("
-    c_varlist( code, mm[ 4 ], "_" )
+    code[ #code+1 ] = "]=f\n  end\n  return f("
+    c_varlist( code, mm[ 3 ], "_" )
     code[ #code+1 ] = ",...)\nend\n"
     code = t_concat( code )
     --print( code ) -- XXX
     local f = assert( loadstring( code, "[multimethod]" ) )(
-      instance2class, empty, type, error, calculate_cost, erroffset,
-      t_unpack( tcs )
+      type, instance2class, {}, empty, select_impl, no_match3,
+      amb_call, t_unpack( tcs )
     )
     mm[ 1 ] = f
-    mm[ 2 ] = {}
     return f( mm, ... )
   end
 
@@ -502,7 +515,7 @@ do
       end
       i = i + 1
     end
-    assert( #mm[ 3 ] == #ol, "wrong number of overloaded parameters" )
+    assert( #mm[ 2 ] == #ol, "wrong number of overloaded parameters" )
     ol.func = func
     mm[ #mm+1 ] = ol
     mm[ 1 ] = recompile_and_call
