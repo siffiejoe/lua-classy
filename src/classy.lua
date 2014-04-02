@@ -51,8 +51,6 @@ local mode_k_meta = { __mode = "k" }
 --   c_meta = { __index = ..., __call = ..., __newindex = ... },
 -- }
 local classinfo = setmetatable( {}, mode_k_meta )
--- store class for every created object
-local instance2class = setmetatable( {}, mode_k_meta )
 
 
 -- object constructor for the class if no custom __init function is
@@ -60,7 +58,6 @@ local instance2class = setmetatable( {}, mode_k_meta )
 local function default_constructor( meta )
   return function( cls )
     local o = {}
-    instance2class[ o ] = cls
     return setmetatable( o, meta )
   end
 end
@@ -70,7 +67,6 @@ end
 local function init_constructor( meta, init )
   return function( cls, ... )
     local o = {}
-    instance2class[ o ] = cls
     setmetatable( o, meta )
     init( o, ... )
     return o
@@ -113,6 +109,7 @@ local function class_newindex( cls, key, val )
       info.c_meta.__call = default_constructor( info.o_meta )
     end
   else
+    assert( key ~= "__class", "key '__class' is reserved" )
     info.members[ key ] = val
     propagate_update( cls, key )
     for sub in pairs( info.sub ) do
@@ -190,6 +187,7 @@ local function create_class( _, name, ... )
       if k ~= "__init" then index[ k ] = v end
     end
   end
+  index.__class = cls
   classinfo[ cls ] = info
   return setmetatable( cls, info.c_meta )
 end
@@ -202,15 +200,14 @@ setmetatable( M, { __call = create_class } )
 
 -- returns the class of an object
 function M.of( o )
-  if o == nil then return nil end
-  return instance2class[ o ]
+  return type( o ) == "table" and o.__class or nil
 end
 
 
 -- returns the class name of an object or class
 function M.name( oc )
   if oc == nil then return nil end
-  oc = instance2class[ oc ] or oc
+  oc = type( oc ) == "table" and oc.__class or oc
   local info = classinfo[ oc ]
   return info and info.name
 end
@@ -221,7 +218,7 @@ end
 function M.is_a( oc, cls )
   if oc == nil then return nil end
   local info = assert( classinfo[ cls ], "invalid class" )
-  oc = instance2class[ oc ] or oc
+  oc = type( oc ) == "table" and oc.__class or oc
   if oc == cls then return 0 end
   return info.sub[ oc ]
 end
@@ -231,7 +228,6 @@ end
 function M.cast( o, newcls )
   local info = assert( classinfo[ newcls ], "invalid class" )
   setmetatable( o, info.o_meta )
-  instance2class[ o ] = newcls
   return o
 end
 
@@ -318,7 +314,8 @@ do
     for i = 1, select( '#', ... ) do
       local a, pt = ol[ i ], select( i, ... )
       if type( a ) == "table" then -- class table
-        local diff = (pt == a) and 0 or classinfo[ a ].sub[ pt ]
+        local info = classinfo[ a ]
+        local diff = (pt == a) and 0 or info and info.sub[ pt ]
         if not diff then return nil end
         c = c + diff
       else -- type name
@@ -380,13 +377,13 @@ do
 
   local function c_typecheck( t, mm, funcs, j )
     local n, ai = #t, mm[ 2 ][ j ]
-    t[ n+1 ] = "  local i"
-    t[ n+2 ] = j
-    t[ n+3 ] = "=(_"
-    t[ n+4 ] = ai
-    t[ n+5 ] = "~=nil and i2c[_"
+    t[ n+1 ] = "  t=type(_"
+    t[ n+2 ] = ai
+    t[ n+3 ] = ")\n  local t"
+    t[ n+4 ] = j
+    t[ n+5 ] = "=(t=='table' and _"
     t[ n+6 ] = ai
-    t[ n+7 ] = "]) or "
+    t[ n+7 ] = ".__class) or "
     local ltcs = collect_type_checkers( mm, j )
     local m = #ltcs
     for i = 1, m do
@@ -397,10 +394,7 @@ do
       t[ k+3 ] = ai
       t[ k+4 ] = ") or "
     end
-    n = m*5+n+8
-    t[ n ] = "type(_"
-    t[ n+1 ] = ai
-    t[ n+2 ] = ")\n"
+    t[ m*5+n+8 ] = "t\n"
   end
 
   local function c_cache( t, mm )
@@ -410,12 +404,12 @@ do
     t[ n+2 ] = "cache"
     for i = 1, c-1 do
       local j = i*3+n
-      t[ j ] = "[i"
+      t[ j ] = "[t"
       t[ j+1 ] = i
       t[ j+2 ] = "] or empty)"
     end
     local j = c*3+n
-    t[ j ] = "[i"
+    t[ j ] = "[t"
     t[ j+1 ] = c
     t[ j+2 ] = "]\n"
   end
@@ -425,17 +419,17 @@ do
     t[ n+1 ] = "    cost,f,is_amb=sel_impl(cost,f,is_amb,mm["
     t[ n+2 ] = j+FIRST_OL-1
     t[ n+3 ] = "],"
-    c_varlist( t, i, "i" )
+    c_varlist( t, i, "t" )
     t[ #t+1 ] = ")\n"
   end
 
   local function c_updatecache( t, i )
     local n = #t
-    t[ n+1 ] = "    if not t[i"
+    t[ n+1 ] = "    if not t[t"
     t[ n+2 ] = i
-    t[ n+3 ] = "] then t[i"
+    t[ n+3 ] = "] then t[t"
     t[ n+4 ] = i
-    t[ n+5 ] = "]=mk_weak() end\n    t=t[i"
+    t[ n+5 ] = "]=mk_weak() end\n    t=t[t"
     t[ n+6 ] = i
     t[ n+7 ] = "]\n"
   end
@@ -445,7 +439,7 @@ do
     local n = #mm[ 2 ] -- number of polymorphic parameters
     local tcs = collect_type_checkers( mm )
     local code = {
-      "local type,i2c,cache,empty,mk_weak,sel_impl,no_match,amb_call"
+      "local type,cache,empty,mk_weak,sel_impl,no_match,amb_call"
     }
     if #tcs >= 1 then
       code[ #code+1 ] = ","
@@ -453,7 +447,7 @@ do
     c_varlist( code, #tcs, "tc" )
     code[ #code+1 ] = "=...\nreturn function(mm,"
     c_varlist( code, mm[ 3 ], "_" )
-    code[ #code+1 ] = ",...)\n"
+    code[ #code+1 ] = ",...)\n  local t\n"
     for i = 1, n do
       c_typecheck( code, mm, tcs, i )
     end
@@ -472,12 +466,12 @@ do
     elseif is_amb then
       amb_call()
     end
-    local t=cache
+    t=cache
 ]=]
     for i = 1, n-1 do
       c_updatecache( code, i )
     end
-    code[ #code+1 ] = "    t[i"
+    code[ #code+1 ] = "    t[t"
     code[ #code+1 ] = n
     code[ #code+1 ] = "]=f\n  end\n  return f("
     c_varlist( code, mm[ 3 ], "_" )
@@ -485,8 +479,8 @@ do
     code = t_concat( code )
     --print( code ) -- XXX
     local f = assert( loadstring( code, "[multimethod]" ) )(
-      type, instance2class, make_weak(), empty, make_weak,
-      select_impl, no_match3, amb_call, t_unpack( tcs )
+      type, make_weak(), empty, make_weak, select_impl, no_match3,
+      amb_call, t_unpack( tcs )
     )
     mm[ 1 ] = f
     return f( mm, ... )
