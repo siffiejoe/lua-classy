@@ -56,18 +56,16 @@ local classinfo = setmetatable( {}, mode_k_meta )
 -- object constructor for the class if no custom __init function is
 -- defined
 local function default_constructor( meta )
-  return function( cls )
-    local o = {}
-    return setmetatable( o, meta )
+  return function()
+    return setmetatable( {}, meta )
   end
 end
 
 -- object constructor for the class if a custom __init function is
 -- available
 local function init_constructor( meta, init )
-  return function( cls, ... )
-    local o = {}
-    setmetatable( o, meta )
+  return function( _, ... )
+    local o = setmetatable( {}, meta )
     init( o, ... )
     return o
   end
