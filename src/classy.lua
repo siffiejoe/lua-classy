@@ -224,7 +224,10 @@ end
 
 -- change the type of an object to the new class
 function M.cast( o, newcls )
-  local info = assert( classinfo[ newcls ], "invalid class" )
+  local info = classinfo[ newcls ]
+  if not info then
+    error( "invalid class" )
+  end
   setmetatable( o, info.o_meta )
   return o
 end
@@ -491,8 +494,7 @@ do
                        "argument is not a multimethod" )
     local i, n = 1, select( '#', ... )
     local ol = {}
-    assert( n >= 1, "missing function in overload specification" )
-    local func = assert( select( n, ... ),
+    local func = assert( n >= 1 and select( n, ... ),
                          "missing function in overload specification" )
     while i < n do
       local a = select( i, ... )
