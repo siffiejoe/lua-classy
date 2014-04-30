@@ -4,7 +4,7 @@ source = {
   url = "git://github.com/siffiejoe/lua-classy.git",
 }
 description = {
-  summary = "A small library for class-based OO.",
+  summary = "A library for class-based OO.",
   detailed = [[
     This Lua module provides a functable for defining classes in OO
     programming, featuring multiple inheritance with fast method
