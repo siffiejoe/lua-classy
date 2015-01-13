@@ -217,7 +217,8 @@ The resulting class has a `__call` metamethod defined for constructing
 objects of this class, and basically acts like a normal table, except
 that fields with metamethod-names don't end up in the class table.
 Iteration via `pairs()` provides all available fields of the class
-(including fields of base classes), but it only works for Lua 5.2.
+(including fields of base classes), but it only works for Lua 5.2 and
+up.
 
 ####                          class.of()                          ####
 
