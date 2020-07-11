@@ -23,7 +23,7 @@ local allowed_metamethods = {
   __tostring = true, __pairs = true, __ipairs = true, __gc = true,
   __newindex = true, __metatable = true, __idiv = true, __band = true,
   __bor = true, __bxor = true, __bnot = true, __shl = true,
-  __shr = true,
+  __shr = true, __close = true,
 }
 
 -- this metatable is (re-)used often:
@@ -93,6 +93,11 @@ local function class_newindex( cls, key, val )
     assert( info.o_meta[ key ] == nil,
             "overwriting metamethods not allowed" )
     info.o_meta[ key ] = val
+    info.members[ key ] = val
+    propagate_update( cls, key )
+    for sub in pairs( info.sub ) do
+      propagate_update( sub, key )
+    end
   elseif key == "__init" then
     info.members.__init = val
     info.o_meta.__index.__init = val
